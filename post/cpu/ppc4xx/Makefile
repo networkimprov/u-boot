@@ -25,6 +25,6 @@ include $(OBJTREE)/include/autoconf.mk
 LIB	= libpostppc4xx.a
 
 AOBJS-$(CONFIG_HAS_POST)	+= cache_4xx.o
-COBJS-$(CONFIG_HAS_POST)	+= cache.o denali_ecc.o ether.o fpu.o spr.o uart.o watchdog.o
+COBJS-$(CONFIG_HAS_POST)	+= cache.o denali_ecc.o ether.o fpu.o ocm.o spr.o uart.o watchdog.o
 
 include $(TOPDIR)/post/rules.mk
