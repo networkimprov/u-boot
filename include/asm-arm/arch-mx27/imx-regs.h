@@ -204,6 +204,7 @@ struct iim_regs {
 	u32 res[0x1F0];
 	u32 iim_bank_area0[0x100];
 };
+
 #endif
 
 #define IMX_IO_BASE		0x10000000
@@ -253,6 +254,16 @@ struct iim_regs {
 #define SDCS1_SEL	(1 << 1)
 #define SDCS0_SEL	(1 << 0)
 
+#ifndef __ASSEMBLY__
+static inline long mxc_get_nfc_info(void)
+{
+	struct system_control_regs *sc_regs =
+		(struct system_control_regs *)IMX_SYSTEM_CTL_BASE;
+	return readl(&sc_regs->fmcr);
+}
+#define IMX_NFC_IS_16BIT(fmcr) (fmcr & NF_16BIT_SEL)
+#define IMX_NFC_IS_2KPAGE(fmcr) (!(fmcr & NF_FMS))
+#endif
 
 /* important definition of some bits of WCR */
 #define WCR_WDE 0x04
