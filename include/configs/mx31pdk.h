@@ -48,6 +48,10 @@
 #define CONFIG_SKIP_RELOCATE_UBOOT
 #endif
 
+#ifdef CONFIG_NAND_SPL
+#define CONFIG_NAND_MXC_V1
+#endif
+
 /*
  * Size of malloc() pool
  */
