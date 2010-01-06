@@ -166,11 +166,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 void serial_setbrg (void)
 {
-#ifdef CONFIG_MX31
-	u32 clk = mx31_get_ipg_clk();
-#else
-	u32 clk = imx_get_perclk1();
-#endif
+	u32 clk = imx_get_uartclk();
 
 	if (!gd->baudrate)
 		gd->baudrate = CONFIG_BAUDRATE;
