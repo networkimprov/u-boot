@@ -607,22 +607,32 @@ ssize_t hexport_r(struct hsearch_data *htab, const char sep,
  * himport()
  */
 
-/* Check whether variable name is amongst vars[] */
-static int is_var_in_set(const char *name, int nvars, char * const vars[])
+/*
+ * Check whether variable 'name' is amongst vars[],
+ * and remove all instances by setting the pointer to NULL
+ */
+static int is_var_in_set(const char *name, int nvars, char * vars[])
 {
 	int i = 0;
+	int res = 0;
 
 	/* No variables specified means process all of them */
 	if (nvars == 0)
 		return 1;
 
 	for (i = 0; i < nvars; i++) {
-		if (!strcmp(name, vars[i]))
-			return 1;
+		if (vars[i] == NULL)
+			continue;
+		/* If we found it, delete all of them */
+		if (!strcmp(name, vars[i])) {
+			vars[i] = NULL;
+			res = 1;
+		}
 	}
-	debug("Skipping non-listed variable %s\n", name);
+	if (!res)
+		debug("Skipping non-listed variable %s\n", name);
 
-	return 0;
+	return res;
 }
 
 /*
@@ -662,9 +672,11 @@ static int is_var_in_set(const char *name, int nvars, char * const vars[])
 
 int himport_r(struct hsearch_data *htab,
 		const char *env, size_t size, const char sep, int flag,
-		int nvars, char * const vars[], int do_apply)
+		int nvars, char * const __vars[], int do_apply)
 {
 	char *data, *sp, *dp, *name, *value;
+	char *vars[nvars];
+	int i;
 
 	/* Test for correct arguments.  */
 	if (htab == NULL) {
@@ -680,6 +692,10 @@ int himport_r(struct hsearch_data *htab,
 	}
 	memcpy(data, env, size);
 	dp = data;
+
+	/* make a local copy of the list of variables */
+	if (nvars)
+		memcpy(vars, __vars, sizeof(__vars[0]) * nvars);
 
 	if ((flag & H_NOCLEAR) == 0) {
 		/* Destroy old hash table if one exists */
@@ -808,6 +824,24 @@ int himport_r(struct hsearch_data *htab,
 						/* without '\0' termination */
 	debug("INSERT: free(data = %p)\n", data);
 	free(data);
+
+	/* process variables which were not considered */
+	for (i = 0; i < nvars; i++) {
+		if (vars[i] == NULL)
+			continue;
+		/*
+		 * All variables which were not deleted from the variable list
+		 * were not present in the imported env
+		 * This could mean two things:
+		 * a) if the variable was present in current env, we delete it
+		 * b) if the variable was not present in current env, we notify
+		 *    it might be a typo
+		 */
+		if (hdelete_r(vars[i], htab, do_apply) == 0)
+			printf("WARNING: '%s' neither in running nor in imported env!\n", vars[i]);
+		else
+			printf("WARNING: '%s' not in imported env, deleting it!\n", vars[i]);
+	}
 
 	debug("INSERT: done\n");
 	return 1;		/* everything OK */
