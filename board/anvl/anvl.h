@@ -131,7 +131,7 @@ const omap3_sysinfo sysinfo = {
 	MUX_VAL(CP(GPMC_NBE0_CLE),	(IDIS | PTD | DIS | M0)) /*GPMC_nBE0_CLE*/\
 	MUX_VAL(CP(GPMC_NWP),		(IEN  | PTU | EN  | M0)) /*GPMC_nWP*/\
 	MUX_VAL(CP(GPMC_WAIT0),		(IEN  | PTU | EN  | M0)) /*GPMC_WAIT0*/\
-	MUX_VAL(CP(GPMC_WAIT1),		(IEN  | PTU | DIS | M7)) /*SAFE_MODE*/\
+	MUX_VAL(CP(GPMC_WAIT1),		(IEN  | PTU | EN  | M0)) /*GPMC_WAIT1*/\
 	MUX_VAL(CP(GPMC_WAIT2),		(IEN  | PTU | DIS | M7)) /*SAFE_MODE*/\
 	MUX_VAL(CP(GPMC_WAIT3),		(IEN  | PTU | DIS | M7)) /*SAFE_MODE*/\
  /*Battery Voltage ADC conversion start */\
