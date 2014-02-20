@@ -207,6 +207,14 @@
 		"nand read ${loadaddr} 260000 600000; " \
 		"bootm ${loadaddr}\0" \
 
+#define CONFIG_PREBOOT \
+	"echo Checking for install script; " \
+	"if source 80188000; then " \
+		"echo Install done; " \
+	"else " \
+		"echo No install script found; " \
+	"fi; "
+
 #define CONFIG_BOOTCOMMAND \
 	"mmc dev ${mmcdev}; if mmc rescan; then " \
 		"if run loadbootscript; then " \
