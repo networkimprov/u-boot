@@ -109,6 +109,8 @@
 #define CONFIG_CMD_NET		/* bootp, tftpboot, rarpboot	*/
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_PING
+#define CONFIG_CMD_BOOTZ
+#define CONFIG_SUPPORT_RAW_INITRD
 #define CONFIG_BOOTP_DEFAULT
 #define CONFIG_BOOTP_DNS
 #define CONFIG_BOOTP_DNS2
@@ -171,28 +173,21 @@
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"loadaddr=0x82000000\0" \
 	"console=ttyO2,115200n8\0" \
-	"mpurate=500\0" \
+	"mpurate=800\0" \
 	"optargs=\0" \
-	"vram=12M\0" \
 	"mmcdev=0\0" \
 	"mmcroot=/dev/mmcblk0p2 rw\0" \
 	"mmcrootfstype=ext4 rootwait\0" \
-	"nandroot=ubi0:rootfs ubi.mtd=6,512\0" \
-	"nandrootfstype=ubifs\0" \
+	"nandroot=ubi0:rootfs ubi.mtd=7,512\0" \
+	"nandrootfstype=ubifs rootwait\0" \
 	"mmcargs=setenv bootargs console=${console} " \
 		"${optargs} " \
 		"mpurate=${mpurate} " \
-		"vram=${vram} " \
-		"omapfb.mode=dvi:${dvimode} " \
-		"omapdss.def_disp=${defaultdisplay} " \
 		"root=${mmcroot} " \
 		"rootfstype=${mmcrootfstype}\0" \
 	"nandargs=setenv bootargs console=${console} " \
 		"${optargs} " \
 		"mpurate=${mpurate} " \
-		"vram=${vram} " \
-		"omapfb.mode=dvi:${dvimode} " \
-		"omapdss.def_disp=${defaultdisplay} " \
 		"root=${nandroot} " \
 		"rootfstype=${nandrootfstype}\0" \
 	"loadbootscript=fatload mmc ${mmcdev} ${loadaddr} boot.scr\0" \
@@ -204,8 +199,12 @@
 		"bootm ${loadaddr}\0" \
 	"nandboot=echo Booting from nand ...; " \
 		"run nandargs; " \
-		"nand read ${loadaddr} 260000 600000; " \
-		"bootm ${loadaddr}\0" \
+		"nand read ${loadaddr} 580000 800000; " \
+		"nand read 82800000 380000 200000; " \
+		"fdt addr 82800000; " \
+		"fdt resize; " \
+		"nand read 83000000 d80000 1400000; " \
+		"bootz ${loadaddr} 83000000:1400000 82800000\0" \
 
 #define CONFIG_PREBOOT \
 	"echo Checking for install script; " \
@@ -287,8 +286,8 @@
 #define CONFIG_SYS_ONENAND_BASE		ONENAND_MAP
 
 #define CONFIG_ENV_IS_IN_NAND
-#define ONENAND_ENV_OFFSET		0x240000 /* environment starts here */
-#define SMNAND_ENV_OFFSET		0x240000 /* environment starts here */
+#define ONENAND_ENV_OFFSET		0x280000 /* environment starts here */
+#define SMNAND_ENV_OFFSET		0x280000 /* environment starts here */
 
 #define CONFIG_SYS_ENV_SECT_SIZE	(128 << 10)	/* 128 KiB */
 #define CONFIG_ENV_OFFSET		SMNAND_ENV_OFFSET
