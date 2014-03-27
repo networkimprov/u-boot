@@ -171,11 +171,17 @@
 #define CONFIG_BOOTDELAY		5
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"loadaddr=0x82000000\0" \
+	"loadaddr=0x80408000\0" \
+	"rdaddr=0x80c08000\0" \
+	"fdtaddr=0x80208000\0" \
+	"fdtfile=dtb\0" \
+	"bootfile=zimage\0" \
+	"ramdisk=initramfs\0" \
+	"bootpart=1:1\0" \
 	"console=ttyO2,115200n8\0" \
 	"mpurate=800\0" \
 	"optargs=\0" \
-	"mmcdev=0\0" \
+	"mmcdev=1\0" \
 	"mmcroot=/dev/mmcblk0p2 rw\0" \
 	"mmcrootfstype=ext4 rootwait\0" \
 	"nandroot=ubi0:rootfs ubi.mtd=7,512\0" \
@@ -190,13 +196,20 @@
 		"mpurate=${mpurate} " \
 		"root=${nandroot} " \
 		"rootfstype=${nandrootfstype}\0" \
-	"loadbootscript=fatload mmc ${mmcdev} ${loadaddr} boot.scr\0" \
-	"bootscript=echo Running bootscript from mmc ...; " \
-		"source ${loadaddr}\0" \
-	"loaduimage=fatload mmc ${mmcdev} ${loadaddr} uImage\0" \
+	"bootenv=uEnv.txt\0" \
+	"loadbootenv=fatload mmc ${mmcdev} ${loadaddr} ${bootenv}\0" \
+	"importbootenv=echo Importing environment from mmc ...; " \
+		"env import -t $loadaddr $filesize\0" \
+	"loadramdisk=fatload mmc ${mmcdev} ${rdaddr} ${ramdisk}\0" \
+	"loadzimage=fatload mmc ${mmcdev} ${loadaddr} zImage\0" \
+	"loadfdt=fatload mmc ${mmcdev} ${fdtaddr} ${fdtfile}\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
-		"bootm ${loadaddr}\0" \
+		"run loadfdt;" \
+		"fdt addr ${fdtaddr}; " \
+		"fdt resize; " \
+		"run loadramdisk;" \
+		"bootz ${loadaddr} ${rdaddr}:1400000 ${fdtaddr}\0" \
 	"nandboot=echo Booting from nand ...; " \
 		"run nandargs; " \
 		"nand read ${loadaddr} 580000 800000; " \
@@ -216,13 +229,9 @@
 
 #define CONFIG_BOOTCOMMAND \
 	"mmc dev ${mmcdev}; if mmc rescan; then " \
-		"if run loadbootscript; then " \
-			"run bootscript; " \
-		"else " \
-			"if run loaduimage; then " \
-				"run mmcboot; " \
-			"else run nandboot; " \
-			"fi; " \
+		"if run loadzimage; then " \
+			"run mmcboot; " \
+		"else run nandboot; " \
 		"fi; " \
 	"else run nandboot; fi"
 
