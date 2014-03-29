@@ -131,6 +131,7 @@
 #define CONFIG_SYS_OMAP24_I2C_SPEED    100000
 #define CONFIG_SYS_OMAP24_I2C_SLAVE    1
 #define CONFIG_SYS_I2C_OMAP34XX
+#define CONFIG_SYS_BOOT_RAMDISK_HIGH
 
 /*
  * TWL4030
@@ -208,10 +209,8 @@
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
 		"run loadfdt;" \
-		"fdt addr ${fdtaddr}; " \
-		"fdt resize; " \
 		"run loadramdisk;" \
-		"bootz ${loadaddr} ${rdaddr}:1400000 ${fdtaddr}\0" \
+		"bootz ${loadaddr} ${rdaddr}:${filesize} ${fdtaddr}\0" \
 	"nandboot=echo Booting from nand ...; " \
 		"run nandargs; " \
 		"nand read ${loadaddr} 580000 800000; " \
