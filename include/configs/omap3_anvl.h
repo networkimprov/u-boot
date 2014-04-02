@@ -132,6 +132,7 @@
 #define CONFIG_SYS_OMAP24_I2C_SLAVE    1
 #define CONFIG_SYS_I2C_OMAP34XX
 #define CONFIG_SYS_BOOT_RAMDISK_HIGH
+#define CONFIG_CMD_MEMTEST
 
 /*
  * TWL4030
@@ -255,7 +256,7 @@
 /* memtest works on */
 #define CONFIG_SYS_MEMTEST_START	(OMAP34XX_SDRC_CS0)
 #define CONFIG_SYS_MEMTEST_END		(OMAP34XX_SDRC_CS0 + \
-					0x01F00000) /* 31MB */
+					0x10000000) /* 256MB */
 
 #define CONFIG_SYS_LOAD_ADDR		(OMAP34XX_SDRC_CS0) /* default load */
 								/* address */
