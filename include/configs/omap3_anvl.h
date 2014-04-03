@@ -100,6 +100,7 @@
 
 #define CONFIG_CMD_CACHE
 #define CONFIG_CMD_EXT2		/* EXT2 Support			*/
+#define CONFIG_CMD_EXT4
 #define CONFIG_CMD_FAT		/* FAT support			*/
 #define CONFIG_CMD_JFFS2	/* JFFS2 Support		*/
 
@@ -207,6 +208,12 @@
 	"loadramdisk=fatload mmc ${mmcdev} ${rdaddr} ${ramdisk}\0" \
 	"loadzimage=fatload mmc ${mmcdev} ${loadaddr} zImage\0" \
 	"loadfdt=fatload mmc ${mmcdev} ${fdtaddr} ${fdtfile}\0" \
+	"distro_fdt=ext4load mmc ${mmcdev}:2 ${fdtaddr} /boot/dtbs/anvl.dtb\0" \
+	"distro_kernel=ext4load mmc ${mmcdev}:2 ${loadaddr} /boot/zImage\0" \
+	"distroboot=echo Booting distro kernel from mmc...;" \
+		"run mmcargs; " \
+		"run distro_kernel; " \
+		"bootz ${loadaddr} - ${fdtaddr}\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
 		"run loadfdt;" \
@@ -231,7 +238,9 @@
 
 #define CONFIG_BOOTCOMMAND \
 	"mmc dev ${mmcdev}; if mmc rescan; then " \
-		"if run loadzimage; then " \
+		"if run distro_fdt; then " \
+			"run distroboot; " \
+		"elif run loadzimage; then " \
 			"run mmcboot; " \
 		"else run nandboot; " \
 		"fi; " \
