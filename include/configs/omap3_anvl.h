@@ -209,11 +209,16 @@
 	"loadzimage=fatload mmc ${mmcdev} ${loadaddr} zImage\0" \
 	"loadfdt=fatload mmc ${mmcdev} ${fdtaddr} ${fdtfile}\0" \
 	"distro_fdt=ext4load mmc ${mmcdev}:2 ${fdtaddr} /boot/dtbs/anvl.dtb\0" \
-	"distro_kernel=ext4load mmc ${mmcdev}:2 ${loadaddr} /boot/zImage\0" \
+	"distro_kernel=ext4load mmc ${mmcdev}:2 ${loadaddr} /boot/vmlinuz-linux-anvl\0" \
+	"distro_initramfs=ext4load mmc ${mmcdev}:2 ${rdaddr} /boot/initramfs-linux-anvl.img\0" \
 	"distroboot=echo Booting distro kernel from mmc...;" \
 		"run mmcargs; " \
 		"run distro_kernel; " \
-		"bootz ${loadaddr} - ${fdtaddr}\0" \
+		"if run distro_initramfs; then " \
+			"bootz ${loadaddr} ${rdaddr}:${filesize} ${fdtaddr}; " \
+		"else " \
+			"bootz ${loadaddr} - ${fdtaddr}; " \
+		"fi;\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
 		"run loadfdt;" \
