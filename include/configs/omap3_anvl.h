@@ -226,12 +226,13 @@
 		"bootz ${loadaddr} ${rdaddr}:${filesize} ${fdtaddr}\0" \
 	"nandboot=echo Booting from nand ...; " \
 		"run nandargs; " \
+		"nandecc sw; " \
 		"nand read ${loadaddr} 580000 800000; " \
-		"nand read 82800000 380000 200000; " \
-		"fdt addr 82800000; " \
+		"fdt addr ${fdtaddr}; " \
+		"nand read ${fdtaddr}  380000 200000; " \
 		"fdt resize; " \
-		"nand read 83000000 d80000 1400000; " \
-		"bootz ${loadaddr} 83000000:1400000 82800000\0" \
+		"nand read ${rdaddr} d80000 1400000; " \
+		"bootz ${loadaddr} ${rdaddr}:1400000 ${fdtaddr}\0" \
 
 #define CONFIG_PREBOOT \
 	"echo Checking for install script; " \
