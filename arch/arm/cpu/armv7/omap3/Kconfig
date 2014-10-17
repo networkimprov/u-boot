@@ -72,6 +72,9 @@ config TARGET_TAO3530
 config TARGET_TWISTER
 	bool "Twister"
 
+config TARGET_OMAP3_ANVL
+	bool "Anvl"
+
 endchoice
 
 config SYS_CPU
@@ -98,6 +101,7 @@ source "board/corscience/tricorder/Kconfig"
 source "board/htkw/mcx/Kconfig"
 source "board/logicpd/omap3som/Kconfig"
 source "board/matrix_vision/mvblx/Kconfig"
+source "board/networkimprov/anvl/Kconfig"
 source "board/nokia/rx51/Kconfig"
 source "board/technexion/tao3530/Kconfig"
 source "board/technexion/twister/Kconfig"
