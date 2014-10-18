@@ -111,15 +111,34 @@ int board_init(void)
 	return 0;
 }
 
+static int gpio_request_get_value(int gpio)
+{
+	int res;
+
+	res = gpio_request(gpio, "");
+	if (res)
+		return res;
+	gpio_direction_input(gpio);
+	res = gpio_get_value(gpio);
+
+	return res;
+}
+
 /*
  * Routine: get_board_revision
  * Description: Returns the board revision
+ *
+ *		sys_boot1/gpio3		sys_boot3/gpio_5
+ * anvl-evt0:	1			1
+ * anvl-evt1:	0			0
  */
 int get_board_revision(void)
 {
-	int revision;
+	int revision = 1;
 
-	revision = 0; /* prototype board */
+	if ((gpio_request_get_value(3) > 0) &&
+	    (gpio_request_get_value(5) > 0))
+		revision = 0;
 
 	return revision;
 }
@@ -145,20 +164,27 @@ void get_board_mem_timings(struct board_sdrc_timings *timings)
 	switch (get_board_revision()) {
 	case 0:
 		if (pop_mfr == NAND_MFR_MICRON && pop_id == 0xba) {
-			/* 512MB Nand/256MB DDR*/
+			/* Anvl-evt0, 512MB Nand/256MB DDR*/
 			timings->mcfg = MICRON_V_MCFG_165(128 << 20);
 			timings->ctrla = MICRON_V_ACTIMA_165;
 			timings->ctrlb = MICRON_V_ACTIMB_165;
 			timings->rfr_ctrl = SDP_3430_SDRC_RFR_CTRL_165MHz;
 			break;
 		} else if (pop_mfr == NAND_MFR_MICRON && pop_id == 0xbc) {
-			/* ANVL prototype, 512MB Nand/512MB DDR */
+			/* Anvl-evt0, 512MB Nand/512MB DDR */
 			timings->mcfg = MICRON_V_MCFG_200(256 << 20);
 			timings->ctrla = MICRON_V_ACTIMA_200;
 			timings->ctrlb = MICRON_V_ACTIMB_200;
 			timings->rfr_ctrl = SDP_3430_SDRC_RFR_CTRL_200MHz;
 			break;
 		}
+	case 1:
+		/* Anvl-evt1 512MB DDR */
+		timings->mcfg = MICRON_V_MCFG_200(256 << 20);
+		timings->ctrla = MICRON_V_ACTIMA_200;
+		timings->ctrlb = MICRON_V_ACTIMB_200;
+		timings->rfr_ctrl = SDP_3430_SDRC_RFR_CTRL_200MHz;
+		break;
 	default:
 		/* Assume 128MB and Micron/165MHz timings to be safe */
 		timings->mcfg = MICRON_V_MCFG_165(128 << 20);
@@ -478,7 +504,7 @@ int misc_init_r(void)
 
 	i2c_set_bus_num(TWL4030_I2C_BUS);
 
-	printf("Board revision: %d\n", get_board_revision());
+	printf("Board revision: anvl-evt%d\n", get_board_revision());
 
 	dieid_num_r();
 
