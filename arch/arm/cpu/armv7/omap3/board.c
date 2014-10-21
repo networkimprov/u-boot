@@ -63,7 +63,6 @@ u32 spl_boot_mode(void)
 {
 	switch (spl_boot_device()) {
 	case BOOT_DEVICE_MMC2:
-		return MMCSD_MODE_RAW;
 	case BOOT_DEVICE_MMC1:
 		return MMCSD_MODE_FAT;
 		break;
