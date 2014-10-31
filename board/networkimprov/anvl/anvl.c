@@ -72,18 +72,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PCA9632_I2C_REG_SUBADR3		11
 #define PCA9632_I2C_REG_ALLCALL		12
 
-#define GPIO_ANVL_VBAT_ADC_START	66
-#define GPIO_ANVL_BOOT_LED		175
-#define GPIO_ANVL_WLAN_WKUPN		153
-#define GPIO_ANVL_WLAN_PDN		155
-#define GPIO_ANVL_WLAN_EEPROM_WP	176
-#define GPIO_ANVL_WLAN_SLEEPN		177	/* input	*/
-#define GPIO_ANVL_WLAN_HOST_WKUP	10	/* input	*/
-#define GPIO_ANVL_EMMC_RESETN		75
-#define GPIO_ANVL_POP_TEMP		113	/* input	*/
-#define GPIO_ANVL_POP_INT1		114	/* input	*/
-#define GPIO_ANVL_POP_INT0		115	/* input	*/
-
 #define OMAP3_GENERAL_REG_BASE		0x48002270
 #define OMAP_CONTROL_DEVCONF1		(OMAP3_GENERAL_REG_BASE + 0x68)
 #define OMAP_CONTROL_DEVCONF1_MMCSDIO2ADPCLKISEL	(1<<6)
@@ -270,19 +258,170 @@ static struct musb_hdrc_platform_data musb_plat = {
 #define TWL4030_RTC_RTC_STATUS_1S_EVENT			1<<2
 #define TWL4030_RTC_RTC_STATUS_RUN			1<<1
 
+#define OMAP_GPIO_OUTPUT		0
+#define OMAP_GPIO_INPUT			1
+#define GPIO_BANK_TWL			7
+
+struct anvl_gpio_config {
+	char *name;
+	int gpio_chip;
+	int gpio;
+	int is_input;
+	int value;
+	int delay;
+};
+
+enum anvl_gpios {
+	BOOT_LED,
+	VBAT_ADC_START,
+	WLAN_WKUPN,
+	WLAN_EEPROM_WP,
+	WLAN_SLEEPN,
+	WLAN_HOST_WKUP,
+	WLAN_PDN,
+	WLAN_RESET,
+	EMMC_RESETN,
+	OTG_CTRL,
+};
+
+static struct anvl_gpio_config anvl_evt0_gpios[] = {
+	/* GPIO name        GPIO chip      GPIO Direction      Value Delay */
+	{ "BOOT_LED",	    0,             175, OMAP_GPIO_OUTPUT, 0,    0, },
+	{ "VBAT_ADC_START", 0,              66, OMAP_GPIO_OUTPUT, 0,    0, },
+	{ "WLAN_WKUPN",     0,             153, OMAP_GPIO_OUTPUT, 1,    0, },
+	{ "WLAN_EEPROM_WP", 0,             176, OMAP_GPIO_OUTPUT, 1,    0, },
+	{ "WLAN_SLEEPN",    0,             177, OMAP_GPIO_INPUT,  0,    0, },
+	{ "WLAN_HOST_WKUP", 0,              10, OMAP_GPIO_INPUT,  0,    0, },
+	{ "WLAN_PDN",       0,             155, OMAP_GPIO_OUTPUT, 0,    0, },
+	{ NULL,             0,               0, 0,                0,    0, },
+	{ "EMMC_RESETN",    0,              75, OMAP_GPIO_OUTPUT, 1,  100, },
+	{ NULL,             0,               0, 0,                0,    0, },
+};
+
+static struct anvl_gpio_config anvl_evt1_gpios[] = {
+	/* GPIO name        GPIO chip      GPIO Direction      Value Delay */
+	{ "BOOT_LED",       0,              14, OMAP_GPIO_OUTPUT, 0,    0, },
+	{ NULL,             0,               0, 0,                0,    0, },
+	{ "WLAN_WKUPN",     0,             153, OMAP_GPIO_OUTPUT, 1,    0, },
+	{ "WLAN_EEPROM_WP", 0,             176, OMAP_GPIO_OUTPUT, 1,    0, },
+	{ "WLAN_SLEEPN",    0,             177, OMAP_GPIO_INPUT,  0,    0, },
+	{ "WLAN_HOST_WKUP", 0,              10, OMAP_GPIO_INPUT,  0,    0, },
+	{ "WLAN_PDN",       GPIO_BANK_TWL,   0, OMAP_GPIO_OUTPUT, 0,    0, },
+	{ "WLAN_RESET",     GPIO_BANK_TWL,   1, OMAP_GPIO_OUTPUT, 1,  100, },
+	{ "EMMC_RESETN",    GPIO_BANK_TWL,   2, OMAP_GPIO_OUTPUT, 1,  100, },
+	{ "OTG_CTRL",       GPIO_BANK_TWL,   6, OMAP_GPIO_OUTPUT, 1,    0, },
+};
+
+static int anvl_set_omap_gpio(struct anvl_gpio_config *g)
+{
+	int res;
+
+	res = gpio_request(g->gpio, g->name);
+	if (res)
+		return -ENODEV;
+	if (g->is_input) {
+		gpio_direction_input(g->gpio);
+		printf("GPIO: Set %s gpio%i to input\n",
+		       g->name, g->gpio);
+		return 0;
+	}
+	if (g->delay) {
+		printf("GPIO: Toggle %s gpio%i output to %i for %ius\n",
+		       g->name, g->gpio, !g->value, g->delay);
+		gpio_direction_output(g->gpio, !g->value);
+		udelay(g->delay);
+	} else {
+		gpio_direction_output(g->gpio, g->value);
+	}
+	gpio_set_value(g->gpio, g->value);
+	printf("GPIO: Set %s gpio%i output to %i\n", g->name, g->gpio,
+	       g->value);
+
+	return 0;
+}
+/* Note that GPIOs need to be muxed using INTRBR_PMBR1 & 2 */
+static int anvl_set_twl_gpio(struct anvl_gpio_config *g)
+{
+	int set, clear;
+	u8 val;
+
+	/* Set direction */
+	set = TWL4030_BASEADD_GPIO + TWL4030_GPIO_GPIODATADIR1;
+	twl4030_i2c_read_u8(TWL4030_CHIP_GPIO, set, &val);
+	if (g->is_input)
+		val &= ~(1 << g->gpio);
+	else
+		val |= (1 << g->gpio);
+	twl4030_i2c_write_u8(TWL4030_CHIP_GPIO, set, val);
+
+	if (g->is_input) {
+		printf("GPIO: Set %s twl_gpio%i to input\n", g->name, g->gpio);
+		return 0;
+	}
+
+	set = TWL4030_BASEADD_GPIO + TWL4030_GPIO_SETGPIODATAOUT1;
+	clear = TWL4030_BASEADD_GPIO + TWL4030_GPIO_CLEARGPIODATAOUT1;
+	val = (1 << g->gpio);
+
+	/* Toggle to oppsite value first if delay is specified */
+	if (g->delay) {
+		printf("GPIO: Toggle %s twl_gpio%i output to %i for %ius\n",
+		       g->name, g->gpio, !g->value, g->delay);
+		if (g->value)
+			twl4030_i2c_write_u8(TWL4030_CHIP_GPIO, clear, val);
+		else
+			twl4030_i2c_write_u8(TWL4030_CHIP_GPIO, set, val);
+		udelay(g->delay);
+	}
+
+	/* Set the final value */
+	if (g->value)
+		twl4030_i2c_write_u8(TWL4030_CHIP_GPIO, set, val);
+	else
+		twl4030_i2c_write_u8(TWL4030_CHIP_GPIO, clear, val);
+	twl4030_i2c_read_u8(TWL4030_CHIP_GPIO, set, &val);
+
+	printf("GPIO: Set %s twl_gpio%i output to %i\n", g->name,
+	       g->gpio, g->value);
+
+	return 0;
+}
+
+static int anvl_set_gpio(struct anvl_gpio_config *g)
+{
+	int res;
+
+	if (!g || !g->name)
+		return -EINVAL;
+
+	if (g->gpio_chip == GPIO_BANK_TWL)
+		res = anvl_set_twl_gpio(g);
+	else
+		res = anvl_set_omap_gpio(g);
+
+	if (res)
+		printf("GPIO: %s gpio%i failed: %i\n", g->name,
+		       g->gpio, res);
+
+	return res;
+}
 
 int misc_init_r(void)
 {
+	struct anvl_gpio_config *gpios;
+	int anvl_evt0, res;
 	u8 buf;
 	int val;
 	char *str;
 
-	/* Disable boot LED N-CH FET color mixer by forcing BOOT_LED = LOW */
+	anvl_evt0 = !get_board_revision();
+	if (anvl_evt0)
+		gpios = anvl_evt0_gpios;
+	else
+		gpios = anvl_evt1_gpios;
 
-	if (!gpio_request(GPIO_ANVL_BOOT_LED, "")) {
-		gpio_direction_output(GPIO_ANVL_BOOT_LED, 0);
-		gpio_set_value(GPIO_ANVL_BOOT_LED, 0);
-	}
+	/* Disable boot LED N-CH FET color mixer by forcing BOOT_LED = LOW */
+	anvl_set_gpio(&gpios[BOOT_LED]);
 
 	/* Reset and configure LED controller */
 
@@ -438,30 +577,18 @@ int misc_init_r(void)
 		}
 	}
 
-	/* Ensure reset of eMMC and bring it out of reset */
+	/* Set OTG pin high for 500mA for bq24190 */
+	if (!anvl_evt0)
+		anvl_set_gpio(&gpios[OTG_CTRL]);
 
-	if (!gpio_request(GPIO_ANVL_EMMC_RESETN, "")) {
-		gpio_direction_output(GPIO_ANVL_EMMC_RESETN, 0);
-		gpio_set_value(GPIO_ANVL_EMMC_RESETN, 0);
-		udelay(100);
-		gpio_set_value(GPIO_ANVL_EMMC_RESETN, 1);
-	}
+	/* Ensure reset of eMMC and bring it out of reset */
+	anvl_set_gpio(&gpios[EMMC_RESETN]);
 
 	/* Set ADC START GPIO default state */
-
-	if (!gpio_request(GPIO_ANVL_VBAT_ADC_START, "")) {
-		gpio_direction_output(GPIO_ANVL_VBAT_ADC_START, 0);
-		gpio_set_value(GPIO_ANVL_VBAT_ADC_START, 0);
-	}
-
-	/* Bring WLAN out of sleep, previous state unknown */
-
-	if (!gpio_request(GPIO_ANVL_WLAN_SLEEPN, "")) {
-		gpio_direction_input(GPIO_ANVL_WLAN_SLEEPN);
-	}
+	if (anvl_evt0)
+		anvl_set_gpio(&gpios[VBAT_ADC_START]);
 
 	/* Decide WLAN module power by environment variable */
-
 	if ((str = getenv("gpio_wlan_pdn")) != NULL) {
 		val = simple_strtoul(str, NULL, 10);
 	} else {
@@ -470,36 +597,23 @@ int misc_init_r(void)
 		val = 0;
 	}
 
-	if (!gpio_request(GPIO_ANVL_WLAN_PDN, "")) {
-		if (val) {
-			gpio_direction_output(GPIO_ANVL_WLAN_PDN, 1);
-			gpio_set_value(GPIO_ANVL_WLAN_PDN, 1);
-			printf("WLAN: power on\n");
-			udelay(100);
-		} else {
-			gpio_direction_output(GPIO_ANVL_WLAN_PDN, 0);
-			gpio_set_value(GPIO_ANVL_WLAN_PDN, 0);
-			printf("WLAN: power off\n");
+	/* Bring WLAN out of sleep, previous state unknown */
+	anvl_set_gpio(&gpios[WLAN_SLEEPN]);
+
+	/*
+	 * Set WLAN_PDN low and do a reset. Enable the WLAN
+	 * depending on the gpio_wlan_pdn environment variable.
+	 * During WLAN_RESET WLAN_PDN must stay low for 300ms.
+	 */
+	res = anvl_set_gpio(&gpios[WLAN_PDN]);
+	if (!res) {
+		if (!anvl_evt0) {
+			anvl_set_gpio(&gpios[WLAN_RESET]);
+			mdelay(300);
 		}
-	}
-
-	/* Enforce WLAN EEPROM write protect */
-
-	if (!gpio_request(GPIO_ANVL_WLAN_EEPROM_WP, "")) {
-		gpio_direction_output(GPIO_ANVL_WLAN_EEPROM_WP, 1);
-		gpio_set_value(GPIO_ANVL_WLAN_EEPROM_WP, 1);
-	}
-
-	/* Trigger a WLAN wakeup (not really necessary) */
-
-	if (!gpio_request(GPIO_ANVL_WLAN_WKUPN, "")) {
-		gpio_direction_output(GPIO_ANVL_WLAN_WKUPN, 1);
-		gpio_set_value(GPIO_ANVL_WLAN_WKUPN, 1);
-		udelay(100);
-		gpio_set_value(GPIO_ANVL_WLAN_WKUPN, 0);
-		udelay(100);
-		gpio_set_value(GPIO_ANVL_WLAN_WKUPN, 1);
-		printf("WLAN: toggled wakeup WLAN_WKUP#\n");
+		gpios[WLAN_PDN].value = val;
+		anvl_set_gpio(&gpios[WLAN_PDN]);
+		anvl_set_gpio(&gpios[WLAN_EEPROM_WP]);
 	}
 
 	i2c_set_bus_num(TWL4030_I2C_BUS);
