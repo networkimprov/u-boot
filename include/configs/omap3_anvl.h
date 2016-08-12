@@ -49,12 +49,6 @@
 #define CONFIG_NAND_OMAP_GPMC
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define CONFIG_SYS_FLASH_BASE		NAND_BASE
-#define CONFIG_ENV_IS_IN_NAND		1
-#define CONFIG_ENV_SIZE			(128 << 10)	/* 128 KiB */
-#define SMNAND_ENV_OFFSET		0x260000	/* environment starts here */
-#define CONFIG_SYS_ENV_SECT_SIZE	(128 << 10)	/* 128 KiB */
-#define CONFIG_ENV_OFFSET		SMNAND_ENV_OFFSET
-#define CONFIG_ENV_ADDR			SMNAND_ENV_OFFSET
 
 /* NAND boot config */
 #define CONFIG_SYS_NAND_BUSWIDTH_16BIT	16
@@ -98,6 +92,14 @@
 #define CONFIG_USB_FASTBOOT_BUF_SIZE	0x07000000
 #define CONFIG_USB_STORAGE
 
+/* ENV related config options */
+#define FAT_ENV_INTERFACE		"mmc"
+#define FAT_ENV_DEVICE_AND_PART		"1"
+#define FAT_ENV_FILE			"uboot.env"
+#define CONFIG_ENV_IS_IN_FAT
+#define CONFIG_FAT_WRITE
+#define CONFIG_ENV_SIZE			0x4000
+
 /* commands to include */
 #include <config_cmd_default.h>
 
@@ -107,6 +109,7 @@
 #define CONFIG_CMD_GPIO
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_SETEXPR
+#define CONFIG_CMD_SAVEENV
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	DEFAULT_LINUX_BOOT_ENV \
@@ -118,7 +121,7 @@
 	"mpurate=800\0" \
 	"optargs=\0" \
 	"mmcdev=1\0" \
-	"mmcroot=/dev/mmcblk0p2 rw\0" \
+	"mmcroot=/dev/mmcblk1p2 rw\0" \
 	"mmcrootfstype=ext4 rootwait\0" \
 	"nandroot=ubi0:rootfs ubi.mtd=7,512\0" \
 	"nandrootfstype=ubifs rootwait\0" \
