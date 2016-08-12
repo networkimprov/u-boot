@@ -116,6 +116,11 @@
 	"fdtfile=dtb\0" \
 	"bootfile=zimage\0" \
 	"ramdisk=initramfs\0" \
+	"fdtaddr=80a00000\0" \
+	"loadaddr=80c00000\0" \
+	"rdaddr=81600000\0" \
+	"fdt_high=8c000000\0" \
+	"initrd_high=ffffffff\0" \
 	"bootpart=1:1\0" \
 	"console=ttyO2,115200n8\0" \
 	"mpurate=800\0" \
@@ -178,6 +183,10 @@
 
 #define CONFIG_BOOTCOMMAND \
 	"mmc dev ${mmcdev}; if mmc rescan; then " \
+		"if run loadbootenv; then " \
+			"echo Loaded environment from ${bootenv};" \
+				"run importbootenv;" \
+		"fi;" \
 		"if run distro_fdt; then " \
 			"run distroboot; " \
 		"elif run loadzimage; then " \
