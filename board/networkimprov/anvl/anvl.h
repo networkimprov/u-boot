@@ -394,18 +394,4 @@ const omap3_sysinfo sysinfo = {
 	MUX_VAL(CP(D2D_MBUSFLAG),	(IEN  | PTD | DIS | M0)) /*d2d_mbusflag*/\
 	MUX_VAL(CP(D2D_SBUSFLAG),	(IEN  | PTD | DIS | M0)) /*d2d_sbusflag*/
 
-#define MUX_TINKERER_MICROSD \
-/*MicroSD card MMC1_DAT[3:0] */\
-	MUX_VAL(CP(MMC1_CLK),		(IDIS | PTU | EN  | M0)) /*MMC1_CLK*/\
-	MUX_VAL(CP(MMC1_CMD),		(IDIS | PTU | EN  | M0)) /*MMC1_CMD*/\
-	MUX_VAL(CP(MMC1_DAT0),		(IEN  | PTU | EN  | M0)) /*MMC1_DAT0*/\
-	MUX_VAL(CP(MMC1_DAT1),		(IEN  | PTU | EN  | M0)) /*MMC1_DAT1*/\
-	MUX_VAL(CP(MMC1_DAT2),		(IEN  | PTU | EN  | M0)) /*MMC1_DAT2*/\
-	MUX_VAL(CP(MMC1_DAT3),		(IEN  | PTU | EN  | M0)) /*MMC1_DAT3*/\
-	MUX_VAL(CP(MMC1_DAT4),		(IEN  | PTD | EN  | M7)) /*SAFE_MODE*/\
-	MUX_VAL(CP(MMC1_DAT5),		(IEN  | PTD | EN  | M7)) /*SAFE_MODE*/\
-	MUX_VAL(CP(MMC1_DAT6),		(IEN  | PTD | EN  | M7)) /*SAFE_MODE*/\
-	MUX_VAL(CP(MMC1_DAT7),		(IEN  | PTD | EN  | M7)) /*SAFE_MODE*/
-
-
 #endif

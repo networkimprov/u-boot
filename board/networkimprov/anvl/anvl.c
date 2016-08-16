@@ -113,22 +113,60 @@ static int gpio_request_get_value(int gpio)
 }
 
 /*
- * Routine: get_board_revision
- * Description: Returns the board revision
+ * Routine: is_anvl_evt0
+ * Description: Checks for anvl-evt0
  *
  *		sys_boot1/gpio3		sys_boot3/gpio_5
  * anvl-evt0:	1			1
  * anvl-evt1:	0			0
  */
-int get_board_revision(void)
+static bool is_anvl_evt0(void)
 {
-	int revision = 1;
-
 	if ((gpio_request_get_value(3) > 0) &&
 	    (gpio_request_get_value(5) > 0))
-		revision = 0;
+		return true;
 
-	return revision;
+	return false;
+}
+
+/*
+ * Routine: get_board_revision
+ * Description: Returns the board revision
+ */
+static int get_board_revision(void)
+{
+	u8 mask;
+	int val;
+
+	if (is_anvl_evt0())
+		return 0;
+
+	MUX_VAL(CP(DSS_DATA12), (IEN | PTD | EN | M4)) /*GPIO82*/
+	MUX_VAL(CP(DSS_DATA14), (IEN | PTD | EN | M4)) /*GPIO84*/
+	MUX_VAL(CP(DSS_DATA23), (IEN | PTD | EN | M4)) /*GPIO93*/
+
+	val = gpio_request_get_value(82);
+	if (val)
+		MUX_VAL(CP(DSS_DATA12), (IEN | PTD | DIS | M4))
+	else
+		MUX_VAL(CP(DSS_DATA12), (IEN | PTD | EN | M4))
+	mask = val;
+
+	val = gpio_request_get_value(84);
+	if (val)
+		MUX_VAL(CP(DSS_DATA14), (IEN | PTD | DIS | M4))
+	else
+		MUX_VAL(CP(DSS_DATA14), (IEN | PTD | EN | M4))
+	mask |= (val << 1);
+
+	val = gpio_request_get_value(93);
+	if (val)
+		MUX_VAL(CP(DSS_DATA23), (IEN | PTD | DIS | M4))
+	else
+		MUX_VAL(CP(DSS_DATA23), (IEN | PTD | EN | M4))
+	mask |= (val << 2);
+
+	return mask + 1;
 }
 
 #ifdef CONFIG_SPL_BUILD
@@ -278,6 +316,9 @@ enum anvl_gpios {
 	WLAN_EEPROM_WP,
 	WLAN_SLEEPN,
 	WLAN_HOST_WKUP,
+	HW_ID_1,
+	HW_ID_2,
+	HW_ID_3,
 	WLAN_PDN,
 	WLAN_RESET,
 	EMMC_RESETN,
@@ -292,6 +333,9 @@ static struct anvl_gpio_config anvl_evt0_gpios[] = {
 	{ "WLAN_EEPROM_WP", 0,             176, OMAP_GPIO_OUTPUT, 1,    0, },
 	{ "WLAN_SLEEPN",    0,             177, OMAP_GPIO_INPUT,  0,    0, },
 	{ "WLAN_HOST_WKUP", 0,              10, OMAP_GPIO_INPUT,  0,    0, },
+	{ NULL,             0,               0, 0,                0,    0, },
+	{ NULL,             0,               0, 0,                0,    0, },
+	{ NULL,             0,               0, 0,                0,    0, },
 	{ "WLAN_PDN",       0,             155, OMAP_GPIO_OUTPUT, 0,    0, },
 	{ NULL,             0,               0, 0,                0,    0, },
 	{ "EMMC_RESETN",    0,              75, OMAP_GPIO_OUTPUT, 1,  100, },
@@ -306,6 +350,9 @@ static struct anvl_gpio_config anvl_evt1_gpios[] = {
 	{ "WLAN_EEPROM_WP", 0,             176, OMAP_GPIO_OUTPUT, 1,    0, },
 	{ "WLAN_SLEEPN",    0,             177, OMAP_GPIO_INPUT,  0,    0, },
 	{ "WLAN_HOST_WKUP", 0,              10, OMAP_GPIO_INPUT,  0,    0, },
+	{ "HW_ID_1",        0,              82, OMAP_GPIO_INPUT,  0,    0, },
+	{ "HW_ID_2",        0,              84, OMAP_GPIO_INPUT,  0,    0, },
+	{ "HW_ID_3",        0,              93, OMAP_GPIO_INPUT,  0,    0, },
 	{ "WLAN_PDN",       GPIO_BANK_TWL,   0, OMAP_GPIO_OUTPUT, 0,    0, },
 	{ "WLAN_RESET",     GPIO_BANK_TWL,   1, OMAP_GPIO_OUTPUT, 1,  100, },
 	{ "EMMC_RESETN",    GPIO_BANK_TWL,   2, OMAP_GPIO_OUTPUT, 1,  100, },
@@ -414,17 +461,31 @@ int misc_init_r(void)
 	int val;
 	char *str;
 
-	anvl_evt0 = !get_board_revision();
+	anvl_evt0 = is_anvl_evt0();
 	if (anvl_evt0)
 		gpios = anvl_evt0_gpios;
 	else
 		gpios = anvl_evt1_gpios;
 
+	if (get_board_revision() >= 1) {
+		anvl_set_gpio(&gpios[HW_ID_1]);
+		anvl_set_gpio(&gpios[HW_ID_2]);
+		anvl_set_gpio(&gpios[HW_ID_3]);
+	}
+
 	/* Disable boot LED N-CH FET color mixer by forcing BOOT_LED = LOW */
 	anvl_set_gpio(&gpios[BOOT_LED]);
 
-	/* Reset and configure LED controller */
+	/* Power for LED controller using VAUX2 starting with anvl-evt2 */
+	if (get_board_revision() >= 2) {
+		i2c_set_bus_num(TWL4030_I2C_BUS);
+		twl4030_pmrecv_vsel_cfg(TWL4030_PM_RECEIVER_VAUX2_DEDICATED,
+					TWL4030_PM_RECEIVER_VAUX2_VSEL_25,
+					TWL4030_PM_RECEIVER_VAUX2_DEV_GRP,
+					TWL4030_PM_RECEIVER_DEV_GRP_P1);
+	}
 
+	/* Reset and configure LED controller */
 	i2c_set_bus_num(PCA9632_I2C_BUS);
 	buf = 0xff;
 	i2c_write(PCA9632_I2C_RESET_ADDRESS, 0x00, 1, &buf, 1);
