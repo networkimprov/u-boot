@@ -1,0 +1,12 @@
+if TARGET_OMAP3_ANVL
+
+config SYS_BOARD
+	default "anvl"
+
+config SYS_VENDOR
+	default "networkimprov"
+
+config SYS_CONFIG_NAME
+	default "omap3_anvl"
+
+endif

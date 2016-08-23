@@ -116,6 +116,13 @@ config TARGET_SNIPER
 	select DM_SERIAL
 	select DM_GPIO
 
+config TARGET_OMAP3_ANVL
+	bool "Anvl"
+	select SUPPORT_SPL
+	select DM
+	select DM_SERIAL
+	select DM_GPIO
+
 endchoice
 
 config SYS_SOC
@@ -137,6 +144,7 @@ source "board/8dtech/eco5pk/Kconfig"
 source "board/corscience/tricorder/Kconfig"
 source "board/htkw/mcx/Kconfig"
 source "board/logicpd/omap3som/Kconfig"
+source "board/networkimprov/anvl/Kconfig"
 source "board/nokia/rx51/Kconfig"
 source "board/technexion/tao3530/Kconfig"
 source "board/technexion/twister/Kconfig"
