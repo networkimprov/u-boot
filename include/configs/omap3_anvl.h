@@ -62,6 +62,8 @@
 #define CONFIG_FASTBOOT_BUF_SIZE	0x07000000
 
 /* USB EHCI */
+#define CONFIG_USB_EHCI
+#define CONFIG_USB_EHCI_OMAP
 
 /* GPIO bank */
 #define CONFIG_OMAP3_GPIO_2		/* GPIO32..63 is in GPIO Bank 2 */

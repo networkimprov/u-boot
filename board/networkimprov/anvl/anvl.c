@@ -51,6 +51,11 @@
 #include "anvl.h"
 #include <command.h>
 
+#ifdef CONFIG_USB_EHCI
+#include <usb.h>
+#include <asm/ehci-omap.h>
+#endif
+
 #define TWL4030_I2C_BUS			0
 #define BQ24190_I2C_BUS			0
 #define BQ24190_I2C_ADDRESS		0x6B
@@ -710,6 +715,7 @@ int misc_init_r(void)
 #ifdef CONFIG_USB_MUSB_OMAP2PLUS
 	musb_register(&musb_plat, &musb_board_data, (void *)MUSB_BASE);
 #endif
+	omap_die_id_usbethaddr();
 
 	return 0;
 }
@@ -750,6 +756,19 @@ int board_eth_init(bd_t *bis)
 	return usb_eth_initialize(bis);
 }
 #endif
+
+#if defined(CONFIG_USB_EHCI) && !defined(CONFIG_SPL_BUILD)
+int ehci_hcd_init(int index, enum usb_init_type init,
+		struct ehci_hccr **hccr, struct ehci_hcor **hcor)
+{
+	return 0;
+}
+
+int ehci_hcd_stop(int index)
+{
+	return 0;
+}
+#endif /* CONFIG_USB_EHCI */
 
 #if !defined(CONFIG_SPL_BUILD)
 /* Disable some interfaces and quiet the LEDs before booting a kernel */
