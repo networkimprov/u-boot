@@ -234,7 +234,7 @@ const omap3_sysinfo sysinfo = {
 	MUX_VAL(CP(UART1_CTS),		(IEN  | PTD | EN  | M0)) /*UART1_CTS*/\
 	MUX_VAL(CP(UART1_RX),		(IEN  | PTD | DIS | M0)) /*UART1_RX*/\
 /*Battery charger interrupt */\
-	MUX_VAL(CP(MCBSP4_CLKX),	(IEN  | PTD | DIS | M4)) /*GPIO_152*/\
+	MUX_VAL(CP(MCBSP4_CLKX),	(IEN  | PTU | EN  | M4)) /*GPIO_152*/\
 								 /* - CHARGER_INT#*/\
 /*Host-to-WLAN wakeup */\
 	MUX_VAL(CP(MCBSP4_DR),		(IEN  | PTD | DIS | M4)) /*GPIO_153*/\
