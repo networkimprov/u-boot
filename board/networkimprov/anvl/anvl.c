@@ -530,20 +530,23 @@ int misc_init_r(void)
 	buf |= 0x20;	/* DMBLNK = 1, Enable blinking	*/
 	i2c_write(PCA9632_I2C_ADDRESS, PCA9632_I2C_REG_MODE2, 1, &buf, 1);
 
-	/* Set the boot blink color	*/
+	/* Set the boot blink color */
 
-	buf = 0x00;	/* Red		*/
+	buf = getenv_hex("anvl_red_brightness", 0x20);
 	i2c_write(PCA9632_I2C_ADDRESS, PCA9632_I2C_REG_PWM0, 1, &buf, 1);
-	buf = 0x55;	/* Green	*/
+
+	buf = getenv_hex("anvl_green_brightness", 0x00);
 	i2c_write(PCA9632_I2C_ADDRESS, PCA9632_I2C_REG_PWM1, 1, &buf, 1);
-	buf = 0xaa;	/* Blue		*/
+
+	buf = getenv_hex("anvl_blue_brightness", 0x20);
 	i2c_write(PCA9632_I2C_ADDRESS, PCA9632_I2C_REG_PWM2, 1, &buf, 1);
 
-	buf = (12<<2) & 0xfc;	/* blink duty cycle (1 to 63 = 0 to 100%)	*/
+	buf = (getenv_hex("anvl_grppwm", 0) << 2) & 0xff;
 	i2c_write(PCA9632_I2C_ADDRESS, PCA9632_I2C_REG_GRPPWM, 1, &buf, 1);
 
-	buf = 12;	/* 12 x (1/24)s = 0.5s blink period	*/
+	buf = getenv_hex("anvl_grpfreq", 0) & 0xff;
 	i2c_write(PCA9632_I2C_ADDRESS, PCA9632_I2C_REG_GRPFREQ, 1, &buf, 1);
+
 	i2c_set_bus_num(TWL4030_I2C_BUS);
 
 	/* Start RTC if it isn't already ticking */
