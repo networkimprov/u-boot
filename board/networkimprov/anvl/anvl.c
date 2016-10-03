@@ -541,7 +541,7 @@ int misc_init_r(void)
 	buf = getenv_hex("anvl_blue_brightness", 0x20);
 	i2c_write(PCA9632_I2C_ADDRESS, PCA9632_I2C_REG_PWM2, 1, &buf, 1);
 
-	buf = (getenv_hex("anvl_grppwm", 0) << 2) & 0xff;
+	buf = getenv_hex("anvl_grppwm", 0) & 0xff;
 	i2c_write(PCA9632_I2C_ADDRESS, PCA9632_I2C_REG_GRPPWM, 1, &buf, 1);
 
 	buf = getenv_hex("anvl_grpfreq", 0) & 0xff;
