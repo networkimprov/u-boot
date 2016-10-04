@@ -770,7 +770,7 @@ int ehci_hcd_stop(int index)
 }
 #endif /* CONFIG_USB_EHCI */
 
-#if !defined(CONFIG_SPL_BUILD)
+#if 0 //!defined(CONFIG_SPL_BUILD)
 /* Disable some interfaces and quiet the LEDs before booting a kernel */
 void show_boot_progress(int val)
 {
