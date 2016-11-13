@@ -680,6 +680,7 @@ int misc_init_r(void)
 	if (anvl_evt0)
 		anvl_set_gpio(&gpios[VBAT_ADC_START]);
 
+#if 0
 	/* Decide WLAN module power by environment variable */
 	if ((str = getenv("gpio_wlan_pdn")) != NULL) {
 		val = simple_strtoul(str, NULL, 10);
@@ -707,6 +708,9 @@ int misc_init_r(void)
 		anvl_set_gpio(&gpios[WLAN_PDN]);
 		anvl_set_gpio(&gpios[WLAN_EEPROM_WP]);
 	}
+#else
+	anvl_set_gpio(&gpios[WLAN_EEPROM_WP]);
+#endif
 
 	i2c_set_bus_num(TWL4030_I2C_BUS);
 
